@@ -4,16 +4,24 @@ import { getScans } from "../services/api";
 export default function Scan() {
   const [scans, setScans] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     // Function to fetch scans from backend
     const fetchScans = async () => {
       try {
+        setError("");
         const res = await getScans();
-        setScans(res.data); // populate with backend scans
-        setLoading(false);
+        const normalizedScans = (res.data || []).map((scan) => ({
+          ...scan,
+          instrument: scan.instrument || "Unknown",
+          timestamp: scan.timestamp || scan.received_at || null,
+        }));
+        setScans(normalizedScans);
       } catch (err) {
         console.error("Failed to fetch scans:", err);
+        setError("Could not load scans. Please check backend connectivity.");
+      } finally {
         setLoading(false);
       }
     };
@@ -55,6 +63,8 @@ export default function Scan() {
 
         {loading ? (
           <p className="text-gray-500 dark:text-gray-400">Loading scans...</p>
+        ) : error ? (
+          <p className="text-red-600 dark:text-red-300">{error}</p>
         ) : (
           <table className="w-full text-left">
             <thead className="border-b border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 text-sm">
@@ -77,14 +87,14 @@ export default function Scan() {
                   <tr
                     key={scan.id}
                     className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
-                  >
-                    <td className="py-2 font-mono">{scan.rfid_tag}</td>
-                    <td>{scan.instrument || "Unknown"}</td>
-                    <td>{scan.room}</td>
-                    <td>{new Date(scan.timestamp).toLocaleString()}</td>
-                  </tr>
-                ))
-              )}
+                    >
+                      <td className="py-2 font-mono">{scan.rfid_tag}</td>
+                      <td>{scan.instrument}</td>
+                      <td>{scan.room}</td>
+                      <td>{scan.timestamp ? new Date(scan.timestamp).toLocaleString() : "-"}</td>
+                    </tr>
+                  ))
+                )}
             </tbody>
           </table>
         )}
