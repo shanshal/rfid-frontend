@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react";
-import { getScans } from "../services/api";
+import { Link } from "react-router-dom";
+
+import { getAlerts, getScans } from "../services/api";
 
 export default function Scan() {
   const [scans, setScans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [unknownRfid, setUnknownRfid] = useState("");
 
   useEffect(() => {
     // Function to fetch scans from backend
@@ -12,12 +15,21 @@ export default function Scan() {
       try {
         setError("");
         const res = await getScans();
+        const alertsRes = await getAlerts();
+
         const normalizedScans = (res.data || []).map((scan) => ({
           ...scan,
           instrument: scan.instrument || "Unknown",
           timestamp: scan.timestamp || scan.received_at || null,
         }));
+
+        const latestUnknownAlert = (alertsRes.data || []).find(
+          (alert) => alert.title === "Unknown RFID Tag"
+        );
+        const match = latestUnknownAlert?.message?.match(/'([^']+)'/);
+
         setScans(normalizedScans);
+        setUnknownRfid(match?.[1] || "");
       } catch (err) {
         console.error("Failed to fetch scans:", err);
         setError("Could not load scans. Please check backend connectivity.");
@@ -39,6 +51,20 @@ export default function Scan() {
       <h1 className="text-2xl font-bold text-slate-800 dark:text-gray-100">
         RFID Live Scan
       </h1>
+
+      {unknownRfid && (
+        <div className="bg-amber-50 border border-amber-300 text-amber-900 dark:bg-amber-950 dark:border-amber-700 dark:text-amber-200 rounded-xl p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+          <p className="text-sm">
+            Unrecognized RFID detected: <span className="font-mono font-semibold">{unknownRfid}</span>
+          </p>
+          <Link
+            to={`/instruments?rfid=${encodeURIComponent(unknownRfid)}`}
+            className="inline-flex items-center justify-center px-3 py-2 rounded-md bg-amber-600 text-white text-sm hover:bg-amber-700"
+          >
+            Register This Instrument
+          </Link>
+        </div>
+      )}
 
       {/* Scanner Status */}
       <div className="bg-white dark:bg-gray-800 shadow rounded-xl p-4 flex justify-between items-center">

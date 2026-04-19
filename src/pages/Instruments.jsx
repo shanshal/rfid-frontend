@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 
-import { createInstrument, getInstruments } from "../services/api";
+import { createInstrument, getInstruments, retireInstrument } from "../services/api";
 
 export default function Instruments() {
+  const location = useLocation();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [locationFilter, setLocationFilter] = useState("");
@@ -11,7 +13,9 @@ export default function Instruments() {
   const [error, setError] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [createError, setCreateError] = useState("");
+  const [actionError, setActionError] = useState("");
   const [creating, setCreating] = useState(false);
+  const [retiringId, setRetiringId] = useState(null);
   const [newInstrument, setNewInstrument] = useState({
     rfid: "",
     name: "",
@@ -35,6 +39,22 @@ export default function Instruments() {
 
     fetchInstruments();
   }, []);
+
+  const prefilledRfid = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    const rfid = params.get("rfid");
+    return rfid ? rfid.trim().toUpperCase() : "";
+  }, [location.search]);
+
+  useEffect(() => {
+    if (!prefilledRfid) {
+      return;
+    }
+
+    setShowCreateForm(true);
+    setNewInstrument((current) => ({ ...current, rfid: prefilledRfid }));
+    setCreateError("");
+  }, [prefilledRfid]);
 
   const filteredInstruments = instruments.filter((instrument) => {
     const matchesSearch =
@@ -78,6 +98,35 @@ export default function Instruments() {
       setCreateError(backendMessage || "Could not create instrument. Please try again.");
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleRetireInstrument = async (instrument) => {
+    if (instrument.status === "Retired") {
+      return;
+    }
+
+    const reason = window.prompt(
+      `Retire ${instrument.name}? Enter reason (optional):`,
+      "Retired manually from admin dashboard"
+    );
+
+    if (reason === null) {
+      return;
+    }
+
+    setActionError("");
+    setRetiringId(instrument.id);
+    try {
+      const res = await retireInstrument(instrument.id, reason);
+      setInstruments((current) =>
+        current.map((item) => (item.id === instrument.id ? res.data : item))
+      );
+    } catch (err) {
+      const backendMessage = err?.response?.data?.detail;
+      setActionError(backendMessage || "Could not retire instrument. Please try again.");
+    } finally {
+      setRetiringId(null);
     }
   };
 
@@ -138,6 +187,10 @@ export default function Instruments() {
         </form>
       )}
 
+      {actionError && (
+        <p className="text-sm text-red-600 dark:text-red-300">{actionError}</p>
+      )}
+
       {/* Filters */}
       <div className="flex gap-4">
         <input
@@ -182,13 +235,14 @@ export default function Instruments() {
               <th>Instrument</th>
               <th>Status</th>
               <th>Location</th>
+              <th className="text-right">Actions</th>
             </tr>
           </thead>
 
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={4} className="py-4 text-center text-gray-500 dark:text-gray-400">
+                <td colSpan={5} className="py-4 text-center text-gray-500 dark:text-gray-400">
                   Loading instruments...
                 </td>
               </tr>
@@ -196,7 +250,7 @@ export default function Instruments() {
 
             {!loading && error && (
               <tr>
-                <td colSpan={4} className="py-4 text-center text-red-600 dark:text-red-300">
+                <td colSpan={5} className="py-4 text-center text-red-600 dark:text-red-300">
                   {error}
                 </td>
               </tr>
@@ -204,7 +258,7 @@ export default function Instruments() {
 
             {!loading && !error && filteredInstruments.length === 0 && (
               <tr>
-                <td colSpan={4} className="py-4 text-center text-gray-500 dark:text-gray-400">
+                <td colSpan={5} className="py-4 text-center text-gray-500 dark:text-gray-400">
                   No instruments found.
                 </td>
               </tr>
@@ -239,6 +293,16 @@ export default function Instruments() {
                   )}
                 </td>
                 <td>{instrument.location}</td>
+                <td className="text-right">
+                  <button
+                    type="button"
+                    onClick={() => handleRetireInstrument(instrument)}
+                    disabled={instrument.status === "Retired" || retiringId === instrument.id}
+                    className="px-3 py-1 rounded-md text-xs bg-slate-700 text-white hover:bg-slate-800 disabled:opacity-50"
+                  >
+                    {retiringId === instrument.id ? "Retiring..." : instrument.status === "Retired" ? "Retired" : "Retire"}
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>

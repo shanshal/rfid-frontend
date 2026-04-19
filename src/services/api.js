@@ -9,6 +9,8 @@ const api = axios.create({
 export const getScans = () => api.get("/scans");
 export const getInstruments = () => api.get("/instruments");
 export const createInstrument = (payload) => api.post("/instruments", payload);
+export const retireInstrument = (instrumentId, notes) =>
+  api.post(`/instruments/${instrumentId}/retire`, { notes });
 export const getAlerts = () => api.get("/alerts");
 
 export default api;
