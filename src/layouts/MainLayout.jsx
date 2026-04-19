@@ -2,15 +2,14 @@
 import logo from "../assets/logo.png";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { Bell, Moon, Sun } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 function MainLayout() {
   const location = useLocation();
   const isDashboard = location.pathname === "/";
 
-  const [darkMode, setDarkMode] = useState(false);
-  useEffect(() => {
-    setDarkMode(document.documentElement.classList.contains("dark"));
-  }, []);
+  const [darkMode, setDarkMode] = useState(() =>
+    document.documentElement.classList.contains("dark")
+  );
 
   const toggleDarkMode = () => {
     const html = document.documentElement;
@@ -28,6 +27,7 @@ function MainLayout() {
         <h1 className="text-2xl font-bold mb-8">Raven Eye</h1>
         <nav className="flex flex-col space-y-4">
           <Link to="/" className="hover:text-medical-turquoise">Dashboard</Link>
+          <Link to="/readers" className="hover:text-medical-turquoise">Readers</Link>
           <Link to="/instruments" className="hover:text-medical-turquoise">Instruments</Link>
           <Link to="/scan" className="hover:text-medical-turquoise">Scan</Link>
           <Link to="/alerts" className="hover:text-medical-turquoise">Alerts</Link>
