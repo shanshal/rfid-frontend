@@ -1,30 +1,26 @@
-// src/App.jsx
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import MainLayout from "./layouts/MainLayout.jsx";
-import Dashboard from "./pages/Dashboard.jsx";
-import Instruments from "./pages/Instruments.jsx";
-import InstrumentDetail from "./pages/InstrumentDetail.jsx";
-import Readers from "./pages/Readers.jsx";
-import Scan from "./pages/Scan.jsx";
-import Alerts from "./pages/Alerts.jsx";
-import Support from "./pages/Support.jsx";
+import Dashboard from "./pages/Dashboard";
+import RoomDetail from "./pages/RoomDetail";
+import Instruments from "./pages/Instruments";
+import InstrumentDetail from "./pages/InstrumentDetail";
+import Devices from "./pages/Devices";
+import DeviceDetail from "./pages/DeviceDetail";
+import Register from "./pages/Register";
+import SystemLogs from "./pages/SystemLogs";
 
-function App() {
+export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<MainLayout />}>
-          <Route index element={<Dashboard />} />
-          <Route path="readers" element={<Readers />} />
-          <Route path="instruments" element={<Instruments />} />
-          <Route path="instruments/:id" element={<InstrumentDetail />} />
-          <Route path="scan" element={<Scan />} />
-          <Route path="alerts" element={<Alerts />} />
-          <Route path="support" element={<Support />} />
-        </Route>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/rooms/:id" element={<RoomDetail />} />
+        <Route path="/instruments" element={<Instruments />} />
+        <Route path="/instruments/:id" element={<InstrumentDetail />} />
+        <Route path="/devices" element={<Devices />} />
+        <Route path="/devices/:id" element={<DeviceDetail />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/logs" element={<SystemLogs />} />
       </Routes>
     </BrowserRouter>
   );
 }
-
-export default App;
